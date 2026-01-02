@@ -1,0 +1,94 @@
+generator client {
+  provider = "prisma-client-js"
+  engineType = "library"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+model Part {
+  id           String  @id @default(cuid())
+  partNumber   String  @unique
+  description  String?
+  manufacturer String?
+  packaging    String?
+
+  orderMultiple Int     @default(1)
+  moq           Int     @default(1)
+  supplier      String?
+  supplierSku   String?
+
+  inventory   Inventory?
+  assignments FeederAssignment[]
+
+  purchaseImportLines PurchaseImportLine[]
+
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  @@index([partNumber])
+}
+
+model Inventory {
+  id     String @id @default(cuid())
+  partId String @unique
+  part   Part   @relation(fields: [partId], references: [id], onDelete: Cascade)
+
+  onHand   Int     @default(0)
+  reserved Int     @default(0)
+  onOrder  Int     @default(0)
+  location String?
+
+  updatedAt DateTime @updatedAt
+}
+
+model Feeder {
+  id       String  @id @default(cuid())
+  feederNo String  @unique
+  note     String?
+
+  assignments FeederAssignment[]
+}
+
+model FeederAssignment {
+  id       String @id @default(cuid())
+  partId   String
+  feederId String
+  part     Part   @relation(fields: [partId], references: [id], onDelete: Cascade)
+  feeder   Feeder @relation(fields: [feederId], references: [id], onDelete: Cascade)
+
+  active       Boolean   @default(true)
+  assignedAt   DateTime  @default(now())
+  unassignedAt DateTime?
+
+  @@index([partId, active])
+  @@index([feederId, active])
+}
+
+model PurchaseImportBatch {
+  id        String   @id @default(cuid())
+  fileName  String
+  meta      Json?
+  createdAt DateTime @default(now())
+
+  lines PurchaseImportLine[]
+}
+
+model PurchaseImportLine {
+  id      String              @id @default(cuid())
+  batchId String
+  batch   PurchaseImportBatch @relation(fields: [batchId], references: [id], onDelete: Cascade)
+
+  partNumberRaw String
+  partId        String?
+  part          Part?   @relation(fields: [partId], references: [id], onDelete: SetNull)
+
+  qty    Int
+  status String // "CREATED_PART" | "UPDATED_ON_ORDER" | "ERROR"
+  error  String?
+
+  createdAt DateTime @default(now())
+
+  @@index([batchId])
+}
