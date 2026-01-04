@@ -12,5 +12,16 @@ services:
     volumes:
       - sklad_pgdata:/var/lib/postgresql/data
 
+  converter:
+    image: linuxserver/libreoffice:latest
+    container_name: sklad_converter
+    restart: unless-stopped
+    environment:
+      - PUID=1000
+      - PGID=1000
+      - TZ=Europe/Prague
+    volumes:
+      - ./tmp-convert:/work
+
 volumes:
   sklad_pgdata:

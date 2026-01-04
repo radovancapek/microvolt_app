@@ -67,12 +67,13 @@ model FeederAssignment {
 }
 
 model PurchaseImportBatch {
-  id        String   @id @default(cuid())
-  fileName  String
-  meta      Json?
-  createdAt DateTime @default(now())
+  id           String   @id @default(cuid())
+  fileName     String
+  salesOrderNo String?  @unique
+  meta         Json?
+  createdAt    DateTime @default(now())
 
-  lines PurchaseImportLine[]
+  lines        PurchaseImportLine[]
 }
 
 model PurchaseImportLine {
