@@ -17,24 +17,24 @@ Projekt je postavený tak, aby šel rychle používat ve výrobě (čitelné sta
 ## Rychlý start (lokálně)
 
 ### 1) Instalace závislostí
-npm.cmd install
+`npm.cmd install`
 
 ### 2) Docker služby (DB + konvertor) + složka pro konverze
-New-Item -ItemType Directory -Force tmp-convert
-docker compose up -d
+`New-Item -ItemType Directory -Force tmp-convert`
+`docker compose up -d`
 
 ### 3) Environment (.env v rootu) – uprav/ověř připojení k DB
-DATABASE_URL="postgresql://sklad:skladpass@localhost:5432/sklad?schema=public"
+`DATABASE_URL="postgresql://sklad:skladpass@localhost:5432/sklad?schema=public"`
 
 ### 4) Migrace + generate
-npx prisma migrate dev
-npx prisma generate
+`npx prisma migrate dev`
+`npx prisma generate`
 
 ### 5) Seed testovacích dat
-npx prisma db seed
+`npx prisma db seed`
 
 ### 6) Spuštění aplikace
-npm.cmd run dev
+`npm.cmd run dev`
 
 ---
 
