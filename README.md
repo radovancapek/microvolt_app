@@ -36,6 +36,9 @@ npx prisma db seed
 ### 6) Spuštění aplikace
 npm.cmd run dev
 
+### 7) Spuštění náhledu databáze
+npx prisma studio
+
 ---
 
 ## Co aplikace umí
