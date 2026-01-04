@@ -24,7 +24,7 @@ New-Item -ItemType Directory -Force tmp-convert
 docker compose up -d
 
 ### 3) Environment (.env v rootu) – uprav/ověř připojení k DB
-### DATABASE_URL="postgresql://sklad:skladpass@localhost:5432/sklad?schema=public"
+DATABASE_URL="postgresql://sklad:skladpass@localhost:5432/sklad?schema=public"
 
 ### 4) Migrace + generate
 npx prisma migrate dev
