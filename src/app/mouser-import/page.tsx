@@ -16,7 +16,7 @@ export default function MouserImportPage() {
   const [error, setError] = useState("");
 
   return (
-    <main className="mx-auto max-w-6xl px-6 py-8 space-y-6">
+    <main className="mx-auto w-full px-6 py-8 space-y-6">
       <section className="rounded-2xl bg-micro-olive px-6 py-10 text-white">
         <h1 className="text-3xl font-semibold tracking-tight">
           Import objednávky (Mouser)
