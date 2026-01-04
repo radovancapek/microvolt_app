@@ -258,7 +258,7 @@ export function MouserFilePreviewMapper({
       {headers.length > 0 && (
         <div className="grid gap-3 md:grid-cols-2">
           <label className="text-sm">
-            Sloupec: Part number (MPN)
+            Sloupec: Part number (MPN) *
             <select
               className="mt-1 w-full rounded-md border px-3 py-2"
               value={pnCol}
@@ -274,7 +274,7 @@ export function MouserFilePreviewMapper({
           </label>
 
           <label className="text-sm">
-            Sloupec: Quantity
+            Sloupec: Quantity *
             <select
               className="mt-1 w-full rounded-md border px-3 py-2"
               value={qtyCol}
@@ -290,7 +290,7 @@ export function MouserFilePreviewMapper({
           </label>
 
           <label className="text-sm">
-            Sloupec: Description (volitelné)
+            Sloupec: Description
             <select
               className="mt-1 w-full rounded-md border px-3 py-2"
               value={descCol}
@@ -306,7 +306,7 @@ export function MouserFilePreviewMapper({
           </label>
 
           <label className="text-sm">
-            Sloupec: Sales Order No. (volitelné, pro kontrolu duplicit)
+            Sloupec: Sales Order No.
             <select
               className="mt-1 w-full rounded-md border px-3 py-2"
               value={soCol}
@@ -320,6 +320,21 @@ export function MouserFilePreviewMapper({
               ))}
             </select>
           </label>
+        </div>
+      )}
+
+      {headers.length > 0 && (
+        <div className="sticky top-0 z-10 -mx-6 border-y bg-white/90 px-6 py-3 backdrop-blur">
+          <div className="flex flex-wrap items-center justify-between gap-3">
+            <div className="flex items-center gap-3">
+              <PillButton onClick={confirm} disabled={!rows.length || loading}>
+                Potvrdit mapování
+              </PillButton>
+              <span className="text-sm text-black/60">
+                Řádků načteno: {rows.length}
+              </span>
+            </div>
+          </div>
         </div>
       )}
 
@@ -349,13 +364,6 @@ export function MouserFilePreviewMapper({
           </table>
         </div>
       )}
-
-      <div className="flex flex-wrap items-center gap-3">
-        <PillButton onClick={confirm} disabled={!rows.length || loading}>
-          Potvrdit mapování
-        </PillButton>
-        <span className="text-sm text-black/60">Řádků načteno: {rows.length}</span>
-      </div>
     </div>
   );
 }
