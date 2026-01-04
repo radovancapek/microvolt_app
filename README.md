@@ -1,36 +1,106 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# MicroVolt Sklad Monitor
 
-## Getting Started
+Interní webová aplikace pro monitorování skladových zásob a import souborů:
+- **BOM kontrola** (zákaznický BOM → vyhodnocení dostupnosti + doporučení)
+- **Mouser import objednávky** (Excel 97–2003 `.xls` i `.xlsx` bez ruční konverze mimo aplikaci)
 
-First, run the development server:
+Projekt je postavený tak, aby šel rychle používat ve výrobě (čitelné stavy, minimální klikání, audit importů).
 
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
-```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+## Požadavky
+- Node.js 20+
+- Docker Desktop (Windows 11) / Docker Engine (Linux)
+- (Windows) doporučeno používat `npm.cmd` / `npx.cmd` v PowerShellu, pokud je blokované spouštění `.ps1`
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Rychlý start (lokálně)
 
-## Learn More
+# 1) Instalace závislostí
+npm.cmd install
 
-To learn more about Next.js, take a look at the following resources:
+# 2) Docker služby (DB + konvertor) + složka pro konverze
+New-Item -ItemType Directory -Force tmp-convert
+docker compose up -d
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+# 3) Environment (.env v rootu) – uprav/ověř připojení k DB
+# DATABASE_URL="postgresql://sklad:skladpass@localhost:5432/sklad?schema=public"
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+# 4) Migrace + generate
+npx prisma migrate dev
+npx prisma generate
 
-## Deploy on Vercel
+# 5) Seed testovacích dat
+npx prisma db seed
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+# 6) Spuštění aplikace
+npm.cmd run dev
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+---
+
+## Co aplikace umí
+
+### 1) Kontrola BOM vs sklad (`/bom`)
+- Upload BOM souboru (**CSV/XLSX**), zákazníci mají variabilní sloupce → uživatel **namapuje sloupce**:
+  - `Part number`
+  - `Quantity`
+- Vyhodnocení proti skladu i objednávkám (on-hand + on-order):
+  - **OK**: stačí ze skladu
+  - **ČEKÁ SE**: ze skladu to nestačí, ale po doručení objednaného to stačí
+  - **OBJEDNAT**: nestačí ani sklad + objednáno
+- Zobrazení stavu „nasazeno“:
+  - pokud je součástka přiřazena k feederu, zobrazí se **číslo podavače**
+  - výjimečně může mít jedna součástka více feederů
+- Podpora nákupních pravidel:
+  - **MOQ** (`moq`)
+  - **orderMultiple** (`orderMultiple`)
+  - tabulka ukazuje:
+    - `Doobjednat` (kolik reálně chybí)
+    - `Dop. objednat` (zaokrouhleno dle MOQ/násobků)
+
+### 2) Import Mouser objednávky (`/mouser-import`)
+- Upload exportu z Mouseru:
+  - **`.xls` (Excel 97–2003)** → server soubor automaticky převede na `.xlsx` pomocí **LibreOffice** v Dockeru
+  - **`.xlsx`** → čte se přímo
+- Preview + mapování sloupců (server-side):
+  - Part number (MPN): typicky `Mfr. No:`
+  - Quantity: typicky `Order Qty.`
+  - volitelně:
+    - `Description` (plní `Part.description`)
+    - `Sales Order No.` (pro detekci duplicity importu)
+- Import do DB:
+  - existující součástka → `inventory.onOrder += qty`
+  - nová součástka → vytvoří `Part` + `Inventory(onOrder=qty)`
+  - `description`:
+    - u nových parts se uloží
+    - u existujících se doplní jen když je v DB prázdná (nepřepisuje)
+- Audit importů:
+  - `PurchaseImportBatch` (1 import)
+  - `PurchaseImportLine` (řádky importu)
+- Ochrana proti dvojitému importu stejné objednávky:
+  - `PurchaseImportBatch.salesOrderNo` je **unikátní** (pokud je vyplněno)
+  - při duplicitě endpoint vrací **409 Conflict**
+
+---
+
+## Tech stack (aktuální)
+- **Next.js 16** (App Router) + **React** + **TypeScript**
+- **Tailwind CSS v4** (MicroVolt tokeny `micro.*`)
+- **PostgreSQL** (Docker)
+- **Prisma 7.x** + **Driver Adapter pro Postgres**
+  - `@prisma/adapter-pg`
+  - `pg`
+- **LibreOffice** v Dockeru (konverze `.xls → .xlsx`)
+- **exceljs** (server-side čtení Excelů / preview)
+- **papaparse** (CSV parsing v klientu pro BOM)
+
+---
+
+Tailwind (v4)
+Aby fungovaly tokeny micro.*, src/app/globals.css musí explicitně ukazovat na config:
+@config "../../tailwind.config.js";
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+Pokud PowerShell blokuje npm.ps1/npx.ps1, používej npm.cmd / npx.cmd.
