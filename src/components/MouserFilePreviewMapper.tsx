@@ -11,57 +11,62 @@ type ConfirmItem = {
   description?: string;
 };
 
+function normalizeKey(input: string) {
+  return input
+    .toLowerCase()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "") // remove diacritics
+    .replace(/[()]/g, " ")
+    .replace(/[.:]/g, "") // remove punctuation like ":" "."
+    .replace(/[_\-]+/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
 function guessColumn(headers: string[], kind: "pn" | "qty" | "desc" | "so") {
   const norm = headers.map((h) => ({
     raw: h,
-    key: h
-      .toLowerCase()
-      .replace(/\s+/g, " ")
-      .replace(/[_\-]+/g, " ")
-      .trim(),
+    key: normalizeKey(h),
   }));
 
-  const candidatesPn = [
-    "mfr. no:",
-    "mfr no:",
+  // Přesně podle tvého souboru (CZ)
+  const candidatesPnCz = ["vyr c", "vyrobni c", "vyrobni cislo"];
+  const candidatesDescCz = ["popis"];
+  const candidatesQtyCz = ["objednany pocet", "objednano", "pocet", "mnozstvi"];
+  const candidatesSoCz = [
+    "c prodejni objednavky",
+    "cislo prodejni objednavky",
+    "cislo objednavky",
+    "c objednavky",
+  ];
+
+  // Mouser/EN fallback
+  const candidatesPnEn = [
     "mfr no",
     "mfr part number",
     "manufacturer part number",
     "mpn",
   ];
-
-  const candidatesQty = ["order qty.", "order qty", "quantity", "qty"];
-
-  const candidatesDesc = [
-    "desc.:",
-    "desc:",
-    "desc.",
-    "desc",
-    "description",
-    "item description",
-  ];
-
-  const candidatesSalesOrder = [
-    "sales order no.",
-    "sales order no",
-    "sales order",
-    "sales order number",
-  ];
+  const candidatesQtyEn = ["order qty", "quantity", "qty"];
+  const candidatesDescEn = ["desc", "description", "item description"];
+  const candidatesSoEn = ["sales order no", "sales order", "order no", "order number"];
 
   const candidates =
     kind === "pn"
-      ? candidatesPn
+      ? [...candidatesPnCz, ...candidatesPnEn]
       : kind === "qty"
-        ? candidatesQty
+        ? [...candidatesQtyCz, ...candidatesQtyEn]
         : kind === "desc"
-          ? candidatesDesc
-          : candidatesSalesOrder;
+          ? [...candidatesDescCz, ...candidatesDescEn]
+          : [...candidatesSoCz, ...candidatesSoEn];
 
+  // 1) exact match (nejvyšší priorita)
   for (const c of candidates) {
     const found = norm.find((x) => x.key === c);
     if (found) return found.raw;
   }
 
+  // 2) contains match (fallback)
   for (const c of candidates) {
     const found = norm.find((x) => x.key.includes(c));
     if (found) return found.raw;
@@ -223,12 +228,6 @@ export function MouserFilePreviewMapper({
       <div className="flex items-start justify-between gap-4">
         <div>
           <h2 className="text-lg font-semibold text-black/80">{title}</h2>
-          <p className="mt-1 text-sm text-black/60">
-            Podporováno: XLS (97–2003) / XLSX. Preview a čtení dělá server (včetně
-            konverze). Tip: MPN = <span className="font-medium">Mfr. No:</span>,
-            qty = <span className="font-medium">Order Qty.</span>, objednávka ={" "}
-            <span className="font-medium">Sales Order No.</span>
-          </p>
         </div>
 
         <label className="cursor-pointer">
